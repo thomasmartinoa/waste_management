@@ -1,0 +1,42 @@
+name: wastemanagement
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.7.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  firebase_core: ^3.12.1
+  firebase_auth: ^5.5.1
+  fluttertoast: ^8.2.12
+  email_validator: ^2.1.17
+  google_sign_in: ^6.3.0
+  geolocator: ^13.0.2
+  geocoding: ^3.0.0
+  image_picker: ^1.1.2
+  shared_preferences: ^2.5.3
+  cloud_firestore: ^5.6.6
+  firebase_storage: ^12.4.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - C:\Users\thoma\Downloads\waste_management\wastemanagement\images\Bingo.png
+    - C:\Users\thoma\Downloads\waste_management\wastemanagement\images\clean.png
+    - C:\Users\thoma\Downloads\waste_management\wastemanagement\images\or123.png
+    - C:\Users\thoma\Downloads\waste_management\wastemanagement\images\points.png
+    - C:\Users\thoma\Downloads\waste_management\wastemanagement\images\recycle-bin 1.png
+    - C:\Users\thoma\Downloads\waste_management\wastemanagement\images\recycle-bin.png
+    - C:\Users\thoma\Downloads\waste_management\wastemanagement\images\recycle-bin2.png
+    - C:\Users\thoma\Downloads\waste_management\wastemanagement\images\recycle-sign 1.png
+    - C:\Users\thoma\Downloads\waste_management\wastemanagement\images\Vector Group.png 
+          
