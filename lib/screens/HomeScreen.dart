@@ -5,7 +5,7 @@ import 'package:wastemanagement/screens/RewardsScreen.dart';
 import 'package:wastemanagement/screens/Statuscreen.dart';
 import 'package:wastemanagement/screens/accountscreen.dart';
 import 'package:wastemanagement/screens/locationscreen.dart';
-import 'package:wastemanagement/services/auth_service.dart';
+import 'package:wastemanagement/screens/pickupscreen.dart';
 
 class Homescreen extends StatefulWidget {
   const Homescreen({super.key});
@@ -17,11 +17,7 @@ class Homescreen extends StatefulWidget {
 class _HomescreenState extends State<Homescreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
-    HomeContent(),
-    Statuscreen(),
-    Accountscreen(),
-  ];
+  final List<Widget> _pages = [HomeContent(), Statuscreen(), Accountscreen()];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -34,10 +30,7 @@ class _HomescreenState extends State<Homescreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       // Removed AppBar here
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
         selectedLabelStyle: TextStyle(
@@ -53,18 +46,12 @@ class _HomescreenState extends State<Homescreen> {
         selectedItemColor: Colors.black,
         unselectedItemColor: Colors.grey,
         items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Home",
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(
             icon: Icon(Icons.assignment),
             label: "Status",
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "Account",
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Account"),
         ],
       ),
     );
@@ -78,10 +65,8 @@ class HomeContent extends StatelessWidget {
       child: SingleChildScrollView(
         child: Column(
           children: [
-            SizedBox(
-              height: 42,
-            ),
-           
+            SizedBox(height: 42),
+
             Padding(
               padding: const EdgeInsets.all(40),
               child: Container(
@@ -106,37 +91,55 @@ class HomeContent extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 35, right: 185),
                       child: Text(
                         "Manage",
-                        style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(right: 42.5),
                       child: Text(
                         "All types of Waste",
-                        style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(right: 195),
                       child: Text(
                         "with Us",
-                        style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(top: 5, right: 60),
                       child: Text(
                         "With you we will help ecology",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w300),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w300,
+                        ),
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.only(top: 100, left: 20, right: 20),
+                      padding: const EdgeInsets.only(
+                        top: 100,
+                        left: 20,
+                        right: 20,
+                      ),
                       child: InkWell(
                         onTap: () {
-                          Navigator.pushReplacement(
+                          Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => Locationscreen()),
+                            MaterialPageRoute(
+                              builder: (context) => Pickupscreen(location: ""),
+                            ),
                           );
                         },
                         child: Container(
@@ -157,17 +160,26 @@ class HomeContent extends StatelessWidget {
                           child: Row(
                             children: [
                               Padding(
-                                padding: const EdgeInsets.only(left: 20, top: 20),
+                                padding: const EdgeInsets.only(
+                                  left: 20,
+                                  top: 20,
+                                ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       "My Waste pick up",
-                                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                     Text(
                                       "Request for pick up",
-                                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.normal),
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.normal,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -175,7 +187,10 @@ class HomeContent extends StatelessWidget {
                               Spacer(),
                               Padding(
                                 padding: const EdgeInsets.all(10),
-                                child: Image.asset("images/recycle-sign 1.png", scale: 10),
+                                child: Image.asset(
+                                  "images/recycle-sign 1.png",
+                                  scale: 10,
+                                ),
                               ),
                             ],
                           ),
@@ -203,21 +218,42 @@ class HomeContent extends StatelessWidget {
                 children: [
                   InkWell(
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => Bingoscreen()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => Bingoscreen()),
+                      );
                     },
-                    child: ServiceBox(title: "BinGo", image: "images/Bingo.png", scale: 11),
+                    child: ServiceBox(
+                      title: "BinGo",
+                      image: "images/Bingo.png",
+                      scale: 11,
+                    ),
                   ),
                   InkWell(
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => RewardsScreen()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => RewardsScreen()),
+                      );
                     },
-                    child: ServiceBox(title: "Rewards", image: "images/points.png", scale: 16),
+                    child: ServiceBox(
+                      title: "Rewards",
+                      image: "images/points.png",
+                      scale: 16,
+                    ),
                   ),
                   InkWell(
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => DeepCleanScreen()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => DeepCleanScreen()),
+                      );
                     },
-                    child: ServiceBox(title: "DeepClean", image: "images/clean.png", scale: 13),
+                    child: ServiceBox(
+                      title: "DeepClean",
+                      image: "images/clean.png",
+                      scale: 13,
+                    ),
                   ),
                 ],
               ),

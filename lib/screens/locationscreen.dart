@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:wastemanagement/screens/pickupscreen.dart';
+import 'package:wastemanagement/screens/accountscreen.dart';
 
 class Locationscreen extends StatefulWidget {
   const Locationscreen({super.key});
@@ -40,9 +40,7 @@ class _LocationscreenState extends State<Locationscreen> {
     }
 
     if (permission == LocationPermission.deniedForever) {
-      return Future.error(
-        "Location permissions are permanently denied, we cannot request permissions.",
-      );
+      return Future.error("Location permissions are permanently denied, we cannot request permissions.");
     }
 
     try {
@@ -83,174 +81,18 @@ class _LocationscreenState extends State<Locationscreen> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 20, left: 40),
-                child: Text(
-                  "Add New \nAddress",
-                  style: TextStyle(fontSize: 37, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(height: 35),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 30),
-                child: Container(
-                  height: 450,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.black, width: 1.25),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 10,
-                        spreadRadius: 1,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(
-                            top: 10,
-                            left: 150,
-                            bottom: 25,
-                          ),
-                          child: InkWell(
-                            onTap: _detectLocation,
-                            child: const Text(
-                              "Detect Exact Location",
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                color: Color.fromARGB(255, 0, 0, 0),
-                              ),
-                            ),
-                          ),
-                        ),
-                        _buildTextField("House no., Building, Apartment", houseController),
-                        const SizedBox(height: 20),
-                        _buildTextField("Area, Street, Sector", areaController),
-                        const SizedBox(height: 20),
-                        _buildTextField("Landmark (Optional)", landmarkController),
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Expanded(child: _buildTextField("Pincode", pincodeController)),
-                            const SizedBox(width: 20),
-                            Expanded(child: _buildTextField("City/Town", cityController)),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        _buildTextField("State", stateController),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 20, left: 32.5, right: 32.5),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    GestureDetector(
-                      onTap: _showSavedLocationsBottomSheet,
-                      child: const Text(
-                        "Select other location",
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: _saveLocationToFirestore,
-                      child: const Text(
-                        "Save location",
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 5, left: 32.5),
-                child: Text(
-                  _selectedLocation,
-                  style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w400),
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(top: 5, left: 32.5),
-                child: Text(
-                  "Confirm to place pickup",
-                  style: TextStyle(
-                    color: Color.fromARGB(255, 97, 97, 97),
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 20),
-                child: Center(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (houseController.text.isEmpty ||
-                          areaController.text.isEmpty ||
-                          pincodeController.text.isEmpty ||
-                          cityController.text.isEmpty ||
-                          stateController.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Please fill all required address fields")),
-                        );
-                        return;
-                      }
+  Future<void> _saveLocationAndReturn() async {
+    if (houseController.text.isEmpty ||
+        areaController.text.isEmpty ||
+        pincodeController.text.isEmpty ||
+        cityController.text.isEmpty ||
+        stateController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill all required address fields")),
+      );
+      return;
+    }
 
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Pickupscreen(location: _selectedLocation),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.black, width: 1.5),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                    ),
-                    child: const Text("Confirm"),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _saveLocationToFirestore() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
@@ -274,6 +116,11 @@ class _LocationscreenState extends State<Locationscreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location saved')));
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const Accountscreen()),
+      );
     } catch (e) {
       print('Error saving location: $e');
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to save location')));
@@ -383,6 +230,129 @@ class _LocationscreenState extends State<Locationscreen> {
             borderSide: const BorderSide(color: Colors.black, width: 1),
           ),
           contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(top: 20, left: 40),
+                child: Text(
+                  "Add New \nAddress",
+                  style: TextStyle(fontSize: 37, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 35),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 30),
+                child: Container(
+                  height: 450,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.black, width: 1.25),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            top: 10,
+                            left: 150,
+                            bottom: 25,
+                          ),
+                          child: InkWell(
+                            onTap: _detectLocation,
+                            child: const Text(
+                              "Detect Exact Location",
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: Color.fromARGB(255, 0, 0, 0),
+                              ),
+                            ),
+                          ),
+                        ),
+                        _buildTextField("House no., Building, Apartment", houseController),
+                        const SizedBox(height: 20),
+                        _buildTextField("Area, Street, Sector", areaController),
+                        const SizedBox(height: 20),
+                        _buildTextField("Landmark (Optional)", landmarkController),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(child: _buildTextField("Pincode", pincodeController)),
+                            const SizedBox(width: 20),
+                            Expanded(child: _buildTextField("City/Town", cityController)),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        _buildTextField("State", stateController),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 20, left: 32.5),
+                child: GestureDetector(
+                  onTap: _showSavedLocationsBottomSheet,
+                  child: const Text(
+                    "Show available locations",
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 5, left: 32.5),
+                child: Text(
+                  _selectedLocation,
+                  style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w400),
+                ),
+              ),
+              
+              Padding(
+                padding: const EdgeInsets.only(top: 20),
+                child: Center(
+                  child: ElevatedButton(
+                    onPressed: _saveLocationAndReturn,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.black, width: 1.5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                    ),
+                    child: const Text("Save Location"),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

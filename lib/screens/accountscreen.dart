@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:wastemanagement/screens/Signup_Screen.dart';
+import 'package:wastemanagement/screens/locationscreen.dart';
 import 'edit_profile_screen.dart';
-
 
 class Accountscreen extends StatelessWidget {
   const Accountscreen({super.key});
@@ -17,7 +17,11 @@ class Accountscreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+          stream:
+              FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.uid)
+                  .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -59,10 +63,18 @@ class Accountscreen extends StatelessWidget {
                   CircleAvatar(
                     radius: 45,
                     backgroundColor: const Color(0xFFEBEBEB),
-                    backgroundImage: profileImage != null ? NetworkImage(profileImage) : null,
-                    child: profileImage == null
-                        ? const Icon(Icons.person, size: 40, color: Colors.black54)
-                        : null,
+                    backgroundImage:
+                        profileImage != null
+                            ? NetworkImage(profileImage)
+                            : null,
+                    child:
+                        profileImage == null
+                            ? const Icon(
+                              Icons.person,
+                              size: 40,
+                              color: Colors.black54,
+                            )
+                            : null,
                   ),
                   const SizedBox(height: 20),
                   Text(name, style: _textStyle(18, FontWeight.w500)),
@@ -71,44 +83,137 @@ class Accountscreen extends StatelessWidget {
                   Text('Phone: $phone', style: _textStyle(14, FontWeight.w400)),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const EditProfileScreen()),
-                    ),
+                    onPressed:
+                        () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) =>
+                                    const EditProfileScreen(fromAccount: true),
+                          ),
+                        ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.black,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     child: const Text("Edit Profile"),
                   ),
                   const SizedBox(height: 40),
                   const Align(
                     alignment: Alignment.centerLeft,
-                    child: Text("Settings", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: Text(
+                      "Settings",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   const Divider(thickness: 1.2),
+
+                  /// 🔹 Set/Add Location Button
+                  ListTile(
+                    leading: const Icon(Icons.location_on, color: Colors.black),
+                    title: const Text(
+                      "Set / Add Location",
+                      style: TextStyle(fontFamily: 'Poppins'),
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => Locationscreen()),
+                      );
+                    },
+                  ),
+
+                  /// 🔹 Dark Theme Toggle
                   SwitchListTile(
                     value: Theme.of(context).brightness == Brightness.dark,
                     onChanged: (value) {
                       // TODO: Add theme toggle logic here
                     },
-                    title: const Text("Dark Theme", style: TextStyle(fontFamily: 'Poppins')),
+                    title: const Text(
+                      "Dark Theme",
+                      style: TextStyle(fontFamily: 'Poppins'),
+                    ),
                     activeColor: Colors.black,
                   ),
+
+                  /// 🔹 Sign Out with Styled Confirmation
                   ListTile(
-                    title: const Text("Sign Out", style: TextStyle(fontFamily: 'Poppins')),
+                    title: const Text(
+                      "Sign Out",
+                      style: TextStyle(fontFamily: 'Poppins'),
+                    ),
                     trailing: const Icon(Icons.logout),
                     onTap: () async {
-                      await FirebaseAuth.instance.signOut();
-
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (_) => SignupScreen()), 
-                        (route) => false,
+                      final shouldSignOut = await showDialog<bool>(
+                        context: context,
+                        builder:
+                            (context) => AlertDialog(
+                              backgroundColor: Colors.white,
+                              title: const Text(
+                                'Confirm Sign Out',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontFamily: 'Poppins',
+                                ),
+                              ),
+                              content: const Text(
+                                'Are you sure you want to sign out?',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontFamily: 'Poppins',
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed:
+                                      () => Navigator.of(context).pop(false),
+                                  child: const Text(
+                                    'Cancel',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontFamily: 'Poppins',
+                                    ),
+                                  ),
+                                ),
+                                ElevatedButton(
+                                  onPressed:
+                                      () => Navigator.of(context).pop(true),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.black,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Sign Out',
+                                    style: TextStyle(fontFamily: 'Poppins'),
+                                  ),
+                                ),
+                              ],
+                            ),
                       );
+
+                      if (shouldSignOut == true) {
+                        await FirebaseAuth.instance.signOut();
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (_) => SignupScreen()),
+                          (route) => false,
+                        );
+                      }
                     },
-                  )
+                  ),
                 ],
               ),
             );
@@ -119,6 +224,11 @@ class Accountscreen extends StatelessWidget {
   }
 
   TextStyle _textStyle(double size, FontWeight weight) {
-    return TextStyle(fontFamily: 'Poppins', fontSize: size, fontWeight: weight, color: Colors.black);
+    return TextStyle(
+      fontFamily: 'Poppins',
+      fontSize: size,
+      fontWeight: weight,
+      color: Colors.black,
+    );
   }
 }
