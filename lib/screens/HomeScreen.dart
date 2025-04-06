@@ -33,17 +33,7 @@ class _HomescreenState extends State<Homescreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            onPressed: () => AuthService().signOut(context),
-            icon: Icon(Icons.logout),
-            tooltip: "Sign Out",
-          ),
-        ],
-      ),
+      // Removed AppBar here
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
@@ -88,6 +78,10 @@ class HomeContent extends StatelessWidget {
       child: SingleChildScrollView(
         child: Column(
           children: [
+            SizedBox(
+              height: 42,
+            ),
+           
             Padding(
               padding: const EdgeInsets.all(40),
               child: Container(
