@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:wastemanagement/screens/BingoScreen.dart';
+import 'package:wastemanagement/screens/DeepCleanScreen.dart';
+import 'package:wastemanagement/screens/RewardsScreen.dart';
 import 'package:wastemanagement/screens/Statuscreen.dart';
 import 'package:wastemanagement/screens/accountscreen.dart';
 import 'package:wastemanagement/screens/locationscreen.dart';
@@ -15,7 +18,7 @@ class _HomescreenState extends State<Homescreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    HomeContent(), 
+    HomeContent(),
     Statuscreen(),
     Accountscreen(),
   ];
@@ -57,7 +60,7 @@ class _HomescreenState extends State<Homescreen> {
         ),
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        selectedItemColor: Colors.black, 
+        selectedItemColor: Colors.black,
         unselectedItemColor: Colors.grey,
         items: [
           BottomNavigationBarItem(
@@ -77,7 +80,6 @@ class _HomescreenState extends State<Homescreen> {
     );
   }
 }
-
 
 class HomeContent extends StatelessWidget {
   @override
@@ -138,12 +140,10 @@ class HomeContent extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 100, left: 20, right: 20),
                       child: InkWell(
                         onTap: () {
-                            Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => Locationscreen(),
-                                      ),
-                                    );
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => Locationscreen()),
+                          );
                         },
                         child: Container(
                           width: double.infinity,
@@ -181,10 +181,7 @@ class HomeContent extends StatelessWidget {
                               Spacer(),
                               Padding(
                                 padding: const EdgeInsets.all(10),
-                                child: Image.asset(
-                                  "images/recycle-sign 1.png",
-                                  scale: 10,
-                                ),
+                                child: Image.asset("images/recycle-sign 1.png", scale: 10),
                               ),
                             ],
                           ),
@@ -210,9 +207,24 @@ class HomeContent extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  ServiceBox(title: "BinGo", image: "images/Bingo.png", scale: 11),
-                  ServiceBox(title: "Rewards", image: "images/points.png", scale: 16),
-                  ServiceBox(title: "DeepClean", image: "images/clean.png", scale: 13),
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => Bingoscreen()));
+                    },
+                    child: ServiceBox(title: "BinGo", image: "images/Bingo.png", scale: 11),
+                  ),
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => RewardsScreen()));
+                    },
+                    child: ServiceBox(title: "Rewards", image: "images/points.png", scale: 16),
+                  ),
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => DeepCleanScreen()));
+                    },
+                    child: ServiceBox(title: "DeepClean", image: "images/clean.png", scale: 13),
+                  ),
                 ],
               ),
             ),

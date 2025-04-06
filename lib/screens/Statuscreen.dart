@@ -30,97 +30,155 @@ class Statuscreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Pickup Status"),
+        
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
-        automaticallyImplyLeading: false, 
+        automaticallyImplyLeading: false,
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('pickups')
-            .orderBy('timestamp', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(
-              child: Text(
-                "No pickups placed yet.",
-                style: TextStyle(color: Colors.black),
-              ),
-            );
-          }
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Pickup Orders", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
 
-          return ListView(
-            padding: const EdgeInsets.all(10),
-            children: snapshot.data!.docs.map((doc) {
-              final data = doc.data() as Map<String, dynamic>;
-              final String docId = doc.id;
+            // Pickup Orders
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.uid)
+                  .collection('pickups')
+                  .orderBy('timestamp', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Text("No pickups placed yet.");
+                }
 
-              return Card(
-                color: Colors.white,
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  side: const BorderSide(color: Colors.black12),
-                ),
-                elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(15),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Categories: ${data['categories'].join(', ')}",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                return Column(
+                  children: snapshot.data!.docs.map((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final docId = doc.id;
+
+                    return Card(
+                      color: Colors.white,
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        side: const BorderSide(color: Colors.black12),
+                      ),
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(15),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("Categories: ${data['categories'].join(', ')}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+                            Text("Waste Type: ${data['waste_type']}", style: const TextStyle(color: Colors.black)),
+                            Text("Date: ${data['date']}", style: const TextStyle(color: Colors.black)),
+                            Text("Time: ${data['time']}", style: const TextStyle(color: Colors.black)),
+                            Text("Location: ${data['location']}", style: const TextStyle(color: Colors.black)),
+                            const SizedBox(height: 5),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text("Status: Pending", style: TextStyle(color: Colors.black)),
+                                ElevatedButton(
+                                  onPressed: () => _cancelPickup(context, user.uid, docId),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.black,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  child: const Text("Cancel"),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      Text("Waste Type: ${data['waste_type']}", style: const TextStyle(color: Colors.black)),
-                      Text("Date: ${data['date']}", style: const TextStyle(color: Colors.black)),
-                      Text("Time: ${data['time']}", style: const TextStyle(color: Colors.black)),
-                      Text("Location: ${data['location']}", style: const TextStyle(color: Colors.black)),
-                      const SizedBox(height: 5),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            "Status: Pending",
-                            style: TextStyle(color: Colors.black),
-                          ),
-                          ElevatedButton(
-                            onPressed: () => _cancelOrder(context, user.uid, docId),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color.fromARGB(255, 0, 0, 0),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: const Text("Cancel"),
-                          ),
-                        ],
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+
+            const SizedBox(height: 30),
+            const Text("BinGo Orders", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+
+            // BinGo Orders
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('Bingo Orders')
+                  .where('userId', isEqualTo: user.uid)
+                  .orderBy('timestamp', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Text("No BinGo orders placed yet.");
+                }
+
+                return Column(
+                  children: snapshot.data!.docs.map((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final docId = doc.id;
+
+                    return Card(
+                      color: Colors.white,
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        side: const BorderSide(color: Colors.black12),
                       ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          );
-        },
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(15),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("Description: ${data['description']}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+                            Text("Quantity: ${data['quantity']}", style: const TextStyle(color: Colors.black)),
+                            Text("Location: ${data['location']}", style: const TextStyle(color: Colors.black)),
+                            const SizedBox(height: 5),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text("Status: Pending", style: TextStyle(color: Colors.black)),
+                                ElevatedButton(
+                                  onPressed: () => _cancelBingoOrder(context, docId),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.black,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  child: const Text("Cancel"),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  void _cancelOrder(BuildContext context, String userId, String docId) async {
-    bool confirmCancel = await _showConfirmationDialog(context);
-    if (!confirmCancel) return;
+  void _cancelPickup(BuildContext context, String userId, String docId) async {
+    bool confirm = await _showConfirmationDialog(context);
+    if (!confirm) return;
 
     try {
       await FirebaseFirestore.instance
@@ -135,7 +193,27 @@ class Statuscreen extends StatelessWidget {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to cancel order")),
+        const SnackBar(content: Text("Failed to cancel pickup")),
+      );
+    }
+  }
+
+  void _cancelBingoOrder(BuildContext context, String docId) async {
+    bool confirm = await _showConfirmationDialog(context);
+    if (!confirm) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('Bingo Orders')
+          .doc(docId)
+          .delete();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("BinGo order cancelled")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to cancel BinGo order")),
       );
     }
   }
@@ -144,17 +222,11 @@ class Statuscreen extends StatelessWidget {
     return await showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text("Cancel Pickup"),
-            content: const Text("Are you sure you want to cancel this pickup?"),
+            title: const Text("Cancel Order"),
+            content: const Text("Are you sure you want to cancel this order?"),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text("No"),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text("Yes"),
-              ),
+              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("No")),
+              TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Yes")),
             ],
           ),
         ) ??
