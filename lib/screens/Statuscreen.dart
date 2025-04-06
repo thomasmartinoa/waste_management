@@ -30,7 +30,6 @@ class Statuscreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
@@ -170,6 +169,71 @@ class Statuscreen extends StatelessWidget {
                 );
               },
             ),
+
+            const SizedBox(height: 30),
+            const Text("Deep Clean Orders", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+
+            // Deep Clean Orders
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('DeepClean Orders')
+                  .where('userId', isEqualTo: user.uid)
+                  .orderBy('timestamp', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Text("No Deep Clean orders placed yet.");
+                }
+
+                return Column(
+                  children: snapshot.data!.docs.map((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final docId = doc.id;
+
+                    return Card(
+                      color: Colors.white,
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        side: const BorderSide(color: Colors.black12),
+                      ),
+                      elevation: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.all(15),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text("Rooms: ${data['rooms']}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+                            Text("Indoor: ${_toYesNo(data['indoor'])}", style: const TextStyle(color: Colors.black)),
+                            Text("Outdoor: ${_toYesNo(data['outdoor'])}", style: const TextStyle(color: Colors.black)),
+                            Text("Location: ${data['location']}", style: const TextStyle(color: Colors.black)),
+                            const SizedBox(height: 5),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text("Status: Pending", style: TextStyle(color: Colors.black)),
+                                ElevatedButton(
+                                  onPressed: () => _cancelDeepCleanOrder(context, docId),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.black,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  child: const Text("Cancel"),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -218,6 +282,26 @@ class Statuscreen extends StatelessWidget {
     }
   }
 
+  void _cancelDeepCleanOrder(BuildContext context, String docId) async {
+    bool confirm = await _showConfirmationDialog(context);
+    if (!confirm) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('DeepClean Orders')
+          .doc(docId)
+          .delete();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Deep Clean order cancelled")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to cancel Deep Clean order")),
+      );
+    }
+  }
+
   Future<bool> _showConfirmationDialog(BuildContext context) async {
     return await showDialog(
           context: context,
@@ -231,5 +315,11 @@ class Statuscreen extends StatelessWidget {
           ),
         ) ??
         false;
+  }
+
+  String _toYesNo(dynamic value) {
+    if (value is bool) return value ? 'Yes' : 'No';
+    if (value is String) return value.toLowerCase() == 'true' ? 'Yes' : 'No';
+    return 'No';
   }
 }

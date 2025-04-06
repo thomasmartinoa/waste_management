@@ -4,8 +4,12 @@ class RewardsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Rewards")),
-      body: Center(child: Text("Welcome to Rewards!")),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: Text("Rewards"),
+        backgroundColor: Colors.white,
+        ),
+      body: Center(child: Text("Welcome to Rewards!\nComming soon")),
     );
   }
 }
