@@ -4,9 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:wastemanagement/screens/homescreen.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  final bool fromAccount; // 👈 Flag to control back arrow
+  final bool fromAccount;
 
   const EditProfileScreen({super.key, this.fromAccount = false});
 
@@ -64,7 +65,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       'profile_image': _profileImageUrl ?? '',
     });
 
-    Navigator.pop(context);
+    if (widget.fromAccount) {
+      Navigator.pop(context); // just go back if from Account tab
+    } else {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => Homescreen()),
+        (route) => false,
+      );
+    }
   }
 
   Future<void> _pickImage() async {
@@ -85,7 +94,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         foregroundColor: Colors.black,
         title: const Text("Profile set up", style: TextStyle(fontFamily: 'Poppins')),
         elevation: 0,
-        automaticallyImplyLeading: widget.fromAccount, // 👈 show back only if from account
+        automaticallyImplyLeading: widget.fromAccount,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),

@@ -4,7 +4,6 @@ import 'package:wastemanagement/screens/DeepCleanScreen.dart';
 import 'package:wastemanagement/screens/RewardsScreen.dart';
 import 'package:wastemanagement/screens/Statuscreen.dart';
 import 'package:wastemanagement/screens/accountscreen.dart';
-import 'package:wastemanagement/screens/locationscreen.dart';
 import 'package:wastemanagement/screens/pickupscreen.dart';
 
 class Homescreen extends StatefulWidget {
