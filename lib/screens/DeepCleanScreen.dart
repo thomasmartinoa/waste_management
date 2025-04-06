@@ -1,4 +1,3 @@
-// ... Keep your imports the same
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -25,6 +24,7 @@ class _DeepCleanScreenState extends State<DeepCleanScreen> {
   String? selectedLocation;
   List<String> savedLocations = [];
   bool isLoadingLocations = true;
+  bool isSubmitting = false; // <-- Added for spinner
   File? _selectedImage;
 
   // Extra services toggle
@@ -32,7 +32,7 @@ class _DeepCleanScreenState extends State<DeepCleanScreen> {
   bool isWindowCleaningSelected = false;
   bool isPestControlSelected = false;
 
-  // New toggle for outdoor cleaning
+  // Outdoor cleaning toggle
   bool isOutdoorCleaningEnabled = false;
 
   @override
@@ -110,6 +110,8 @@ class _DeepCleanScreenState extends State<DeepCleanScreen> {
       return;
     }
 
+    setState(() => isSubmitting = true);
+
     String? imageUrl;
     if (_selectedImage != null) {
       try {
@@ -121,6 +123,7 @@ class _DeepCleanScreenState extends State<DeepCleanScreen> {
         await ref.putFile(_selectedImage!);
         imageUrl = await ref.getDownloadURL();
       } catch (e) {
+        setState(() => isSubmitting = false);
         print("Image upload error: $e");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Image upload failed: $e")),
@@ -165,6 +168,8 @@ class _DeepCleanScreenState extends State<DeepCleanScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Submission failed: $e")),
       );
+    } finally {
+      setState(() => isSubmitting = false);
     }
   }
 
@@ -174,14 +179,18 @@ class _DeepCleanScreenState extends State<DeepCleanScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Select Image Source'),
         actions: [
-          TextButton(onPressed: () {
-            Navigator.pop(context);
-            _takePhoto();
-          }, child: const Text('Camera')),
-          TextButton(onPressed: () {
-            Navigator.pop(context);
-            _pickImage();
-          }, child: const Text('Gallery')),
+          TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _takePhoto();
+              },
+              child: const Text('Camera')),
+          TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _pickImage();
+              },
+              child: const Text('Gallery')),
         ],
       ),
     );
@@ -262,113 +271,124 @@ class _DeepCleanScreenState extends State<DeepCleanScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Text(
-                'DeepClean',
-                style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildLabel("Indoor areas to clean"),
-                    _buildTextField(_indoorController, hint: "Living room, kitchen..."),
-                    const SizedBox(height: 16),
-
-                    SwitchListTile(
-                      title: const Text("Include Outdoor Cleaning", style: TextStyle(fontFamily: 'Poppins')),
-                      value: isOutdoorCleaningEnabled,
-                      onChanged: (value) {
-                        setState(() {
-                          isOutdoorCleaningEnabled = value;
-                        });
-                      },
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text(
+                    'DeepClean',
+                    style: TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Poppins',
                     ),
-                    if (isOutdoorCleaningEnabled) ...[
-                      _buildLabel("Outdoor areas to clean"),
-                      _buildTextField(_outdoorController, hint: "Garden, balcony..."),
-                      const SizedBox(height: 16),
-                    ],
-
-                    _buildLabel("Number of rooms"),
-                    _buildTextField(_roomsController, hint: "e.g. 3"),
-                    const SizedBox(height: 16),
-                    _buildLabel("Number of bathrooms"),
-                    _buildTextField(_bathroomsController, hint: "e.g. 2"),
-                    const SizedBox(height: 16),
-                    _buildLabel("Special instructions"),
-                    _buildTextField(_specialInstructionsController),
-                    const SizedBox(height: 24),
-                    _buildLabel("Select saved location"),
-                    const SizedBox(height: 8),
-                    _buildLocationDropdown(),
-                    const SizedBox(height: 24),
-
-                    _buildLabel("Extra Services"),
-                    _buildCheckbox("Deep Carpet Cleaning", isCarpetCleaningSelected, (val) {
-                      setState(() => isCarpetCleaningSelected = val ?? false);
-                    }),
-                    _buildCheckbox("Window Cleaning", isWindowCleaningSelected, (val) {
-                      setState(() => isWindowCleaningSelected = val ?? false);
-                    }),
-                    _buildCheckbox("Pest Control", isPestControlSelected, (val) {
-                      setState(() => isPestControlSelected = val ?? false);
-                    }),
-
-                    const SizedBox(height: 16),
-                    _buildLabel("Upload Image (Optional)"),
-                    GestureDetector(
-                      onTap: _showImageSourceDialog,
-                      child: Container(
-                        height: 150,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          border: Border.all(width: 1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: _selectedImage != null
-                            ? Image.file(_selectedImage!, fit: BoxFit.cover)
-                            : const Center(child: Icon(Icons.image, size: 40)),
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: ElevatedButton(
-                onPressed: _submitDeepCleanRequest,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: const Text(
-                  'Confirm',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
                   ),
                 ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildLabel("Indoor areas to clean"),
+                        _buildTextField(_indoorController, hint: "Living room, kitchen..."),
+                        const SizedBox(height: 16),
+
+                        SwitchListTile(
+                          title: const Text("Include Outdoor Cleaning", style: TextStyle(fontFamily: 'Poppins')),
+                          value: isOutdoorCleaningEnabled,
+                          onChanged: (value) {
+                            setState(() => isOutdoorCleaningEnabled = value);
+                          },
+                        ),
+                        if (isOutdoorCleaningEnabled) ...[
+                          _buildLabel("Outdoor areas to clean"),
+                          _buildTextField(_outdoorController, hint: "Garden, balcony..."),
+                          const SizedBox(height: 16),
+                        ],
+
+                        _buildLabel("Number of rooms"),
+                        _buildTextField(_roomsController, hint: "e.g. 3"),
+                        const SizedBox(height: 16),
+                        _buildLabel("Number of bathrooms"),
+                        _buildTextField(_bathroomsController, hint: "e.g. 2"),
+                        const SizedBox(height: 16),
+                        _buildLabel("Special instructions"),
+                        _buildTextField(_specialInstructionsController),
+                        const SizedBox(height: 24),
+                        _buildLabel("Select saved location"),
+                        const SizedBox(height: 8),
+                        _buildLocationDropdown(),
+                        const SizedBox(height: 24),
+
+                        _buildLabel("Extra Services"),
+                        _buildCheckbox("Deep Carpet Cleaning", isCarpetCleaningSelected, (val) {
+                          setState(() => isCarpetCleaningSelected = val ?? false);
+                        }),
+                        _buildCheckbox("Window Cleaning", isWindowCleaningSelected, (val) {
+                          setState(() => isWindowCleaningSelected = val ?? false);
+                        }),
+                        _buildCheckbox("Pest Control", isPestControlSelected, (val) {
+                          setState(() => isPestControlSelected = val ?? false);
+                        }),
+
+                        const SizedBox(height: 16),
+                        _buildLabel("Upload Image (Optional)"),
+                        GestureDetector(
+                          onTap: _showImageSourceDialog,
+                          child: Container(
+                            height: 150,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              border: Border.all(width: 1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: _selectedImage != null
+                                ? Image.file(_selectedImage!, fit: BoxFit.cover)
+                                : const Center(child: Icon(Icons.image, size: 40)),
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: ElevatedButton(
+                    onPressed: isSubmitting ? null : _submitDeepCleanRequest,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: const Text(
+                      'Confirm',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (isSubmitting)
+            Container(
+              color: Colors.black.withOpacity(0.3),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  color: Colors.black,
+                ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

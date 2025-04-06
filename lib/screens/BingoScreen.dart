@@ -38,7 +38,11 @@ class Bingoscreen extends StatelessWidget {
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
+                    return Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.black,
+                      ),
+                    );
                   }
 
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -58,13 +62,27 @@ class Bingoscreen extends StatelessWidget {
                         future: FirebaseFirestore.instance.collection('users').doc(userId).get(),
                         builder: (context, userSnapshot) {
                           if (userSnapshot.connectionState == ConnectionState.waiting) {
-                            return SizedBox.shrink();
+                            return Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  color: Colors.black,
+                                ),
+                              ),
+                            );
                           }
 
-                          final userData = userSnapshot.data?.data() as Map<String, dynamic>?;
+                          if (!userSnapshot.hasData || userSnapshot.data?.data() == null) {
+                            return Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text("User data not found", style: TextStyle(color: Colors.red)),
+                            );
+                          }
 
-                          final userName = userData?['name'] ?? 'Unknown';
-                          final userPhone = userData?['phone'] ?? 'N/A';
+                          final userData = userSnapshot.data!.data() as Map<String, dynamic>;
+
+                          final userName = userData['name'] ?? 'Unknown';
+                          final userPhone = userData['phone'] ?? 'N/A';
 
                           return buildOrderCard(
                             title: order['description'] ?? '',

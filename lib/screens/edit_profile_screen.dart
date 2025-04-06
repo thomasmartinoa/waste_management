@@ -19,8 +19,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+
   File? _profileImage;
   String? _profileImageUrl;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -48,45 +50,96 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  Future<void> _saveProfile() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    if (_profileImage != null) {
-      final ref = FirebaseStorage.instance.ref().child('profile_images/${user.uid}.jpg');
-      await ref.putFile(_profileImage!);
-      _profileImageUrl = await ref.getDownloadURL();
-    }
-
-    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-      'name': _nameController.text,
-      'email': _emailController.text,
-      'phone': _phoneController.text,
-      'profile_image': _profileImageUrl ?? '',
-    });
-
-    if (widget.fromAccount) {
-      Navigator.pop(context); // just go back if from Account tab
-    } else {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => Homescreen()),
-        (route) => false,
-      );
-    }
-  }
-
   Future<void> _pickImage() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (picked != null) {
       setState(() {
         _profileImage = File(picked.path);
+        _profileImageUrl = null; // Clear existing URL if new image is selected
+      });
+    }
+  }
+
+  Future<void> _removeImage() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    setState(() {
+      _profileImage = null;
+      _profileImageUrl = null;
+    });
+
+    try {
+      // Delete from Firebase Storage
+      await FirebaseStorage.instance.ref('profile_images/${user.uid}.jpg').delete();
+    } catch (e) {
+      // It's okay if the file doesn't exist
+    }
+
+    // Remove from Firestore
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      'profile_image': '',
+    });
+  }
+
+  Future<void> _saveProfile() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: Colors.black),
+      ),
+    );
+
+    try {
+      if (_profileImage != null) {
+        final ref = FirebaseStorage.instance.ref().child('profile_images/${user.uid}.jpg');
+        await ref.putFile(_profileImage!);
+        _profileImageUrl = await ref.getDownloadURL();
+      }
+
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'name': _nameController.text,
+        'email': _emailController.text,
+        'phone': _phoneController.text,
+        'profile_image': _profileImageUrl ?? '',
+      });
+
+      Navigator.pop(context); // Close loading dialog
+
+      if (widget.fromAccount) {
+        Navigator.pop(context); // Go back to account screen
+      } else {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const Homescreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save profile: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final showRemoveButton = _profileImage != null || _profileImageUrl != null;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -103,7 +156,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             GestureDetector(
               onTap: _pickImage,
               child: CircleAvatar(
-                radius: 45,
+                radius: 50,
                 backgroundColor: const Color(0xFFEBEBEB),
                 backgroundImage: _profileImage != null
                     ? FileImage(_profileImage!)
@@ -111,10 +164,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ? NetworkImage(_profileImageUrl!) as ImageProvider
                         : null,
                 child: _profileImage == null && _profileImageUrl == null
-                    ? const Icon(Icons.camera_alt, color: Colors.black54)
+                    ? const Icon(Icons.upload, color: Colors.black54, size: 30)
                     : null,
               ),
             ),
+            if (showRemoveButton)
+              TextButton.icon(
+                onPressed: _removeImage,
+                icon: const Icon(Icons.delete_outline, color: Color.fromARGB(255, 0, 0, 0)),
+                label: const Text("Remove Photo", style: TextStyle(color: Color.fromARGB(255, 0, 0, 0))),
+              ),
             const SizedBox(height: 30),
             _buildTextField("Name", _nameController),
             const SizedBox(height: 20),
@@ -123,14 +182,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             _buildTextField("Phone Number", _phoneController),
             const SizedBox(height: 30),
             ElevatedButton(
-              onPressed: _saveProfile,
+              onPressed: _isLoading ? null : _saveProfile,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
               ),
-              child: const Text("Save Changes", style: TextStyle(fontFamily: 'Poppins')),
-            )
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text("Save Changes", style: TextStyle(fontFamily: 'Poppins')),
+            ),
           ],
         ),
       ),

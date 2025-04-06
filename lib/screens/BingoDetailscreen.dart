@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart'; // NEW
+import 'package:permission_handler/permission_handler.dart';
 
 class Bingodetailscreen extends StatefulWidget {
   @override
@@ -19,6 +19,8 @@ class _BingodetailscreenState extends State<Bingodetailscreen> {
   String? selectedLocation;
   List<String> savedLocations = [];
   bool isLoadingLocations = true;
+  bool _isSubmitting = false; // NEW
+
   File? _selectedImage;
 
   @override
@@ -29,10 +31,7 @@ class _BingodetailscreenState extends State<Bingodetailscreen> {
 
   Future<void> _fetchSavedLocations() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) {
-      print('User not logged in');
-      return;
-    }
+    if (uid == null) return;
 
     try {
       final snapshot = await FirebaseFirestore.instance
@@ -43,25 +42,20 @@ class _BingodetailscreenState extends State<Bingodetailscreen> {
           .get();
 
       final locations = snapshot.docs
-          .map((doc) {
-            final data = doc.data();
-            return data['full_address']?.toString() ?? '';
-          })
+          .map((doc) => doc.data()['full_address']?.toString() ?? '')
           .where((address) => address.isNotEmpty)
           .toList();
 
       setState(() {
         savedLocations = locations;
         isLoadingLocations = false;
-        if (savedLocations.isNotEmpty && selectedLocation == null) {
-          selectedLocation = savedLocations.first;
+        if (locations.isNotEmpty) {
+          selectedLocation = selectedLocation ?? locations.first;
         }
       });
     } catch (e) {
       print('Error fetching locations: $e');
-      setState(() {
-        isLoadingLocations = false;
-      });
+      setState(() => isLoadingLocations = false);
     }
   }
 
@@ -70,9 +64,7 @@ class _BingodetailscreenState extends State<Bingodetailscreen> {
     if (status.isGranted) {
       final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
       if (pickedFile != null) {
-        setState(() {
-          _selectedImage = File(pickedFile.path);
-        });
+        setState(() => _selectedImage = File(pickedFile.path));
       }
     } else {
       _showPermissionError();
@@ -84,9 +76,7 @@ class _BingodetailscreenState extends State<Bingodetailscreen> {
     if (status.isGranted) {
       final pickedFile = await ImagePicker().pickImage(source: ImageSource.camera);
       if (pickedFile != null) {
-        setState(() {
-          _selectedImage = File(pickedFile.path);
-        });
+        setState(() => _selectedImage = File(pickedFile.path));
       }
     } else {
       _showPermissionError();
@@ -97,6 +87,14 @@ class _BingodetailscreenState extends State<Bingodetailscreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("Permission denied. Please enable it in settings.")),
     );
+  }
+
+  void _showLoading() {
+    setState(() => _isSubmitting = true);
+  }
+
+  void _hideLoading() {
+    setState(() => _isSubmitting = false);
   }
 
   Future<void> _submitOrder() async {
@@ -113,11 +111,11 @@ class _BingodetailscreenState extends State<Bingodetailscreen> {
       return;
     }
 
+    _showLoading();
+
     String? imageUrl;
     if (_selectedImage != null) {
       try {
-        print("Selected image path: ${_selectedImage!.path}");
-
         final ref = FirebaseStorage.instance
             .ref()
             .child('bingo_order_images')
@@ -127,6 +125,7 @@ class _BingodetailscreenState extends State<Bingodetailscreen> {
         await ref.putFile(_selectedImage!);
         imageUrl = await ref.getDownloadURL();
       } catch (e) {
+        _hideLoading();
         print("Image upload error: $e");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Image upload failed: $e")),
@@ -161,130 +160,146 @@ class _BingodetailscreenState extends State<Bingodetailscreen> {
 
       Navigator.pop(context);
     } catch (e) {
+      print("Order submit error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Failed to place order: $e")),
       );
+    } finally {
+      _hideLoading();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Text(
-                'BinGo',
-                style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Poppins',
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    'BinGo',
+                    style: TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildLabel('Description of waste'),
-                    _buildTextField(_descriptionController),
-                    SizedBox(height: 20),
-                    _buildLabel('Quantity of waste'),
-                    _buildTextField(_quantityController),
-                    SizedBox(height: 30),
-                    isLoadingLocations
-                        ? Center(child: CircularProgressIndicator())
-                        : savedLocations.isNotEmpty
-                            ? Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: Colors.grey.shade400),
-                                ),
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    isExpanded: true,
-                                    value: selectedLocation,
-                                    hint: Text("Choose saved location"),
-                                    items: savedLocations.map((location) {
-                                      return DropdownMenuItem<String>(
-                                        value: location,
-                                        child: Text(
-                                          location,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontFamily: 'Poppins',
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        selectedLocation = value;
-                                      });
-                                    },
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildLabel('Description of waste'),
+                        _buildTextField(_descriptionController),
+                        SizedBox(height: 20),
+                        _buildLabel('Quantity of waste'),
+                        _buildTextField(_quantityController),
+                        SizedBox(height: 30),
+                        isLoadingLocations
+                            ? Center(child: CircularProgressIndicator(color: Colors.black))
+                            : savedLocations.isNotEmpty
+                                ? Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: Colors.grey.shade400),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                    child: DropdownButtonHideUnderline(
+                                      child: DropdownButton<String>(
+                                        isExpanded: true,
+                                        value: selectedLocation,
+                                        hint: Text("Choose saved location"),
+                                        items: savedLocations.map((location) {
+                                          return DropdownMenuItem<String>(
+                                            value: location,
+                                            child: Text(
+                                              location,
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontFamily: 'Poppins',
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                        onChanged: (value) {
+                                          setState(() {
+                                            selectedLocation = value;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  )
+                                : Padding(
+                                    padding: const EdgeInsets.only(top: 10),
+                                    child: Text(
+                                      "No saved locations found. Please add a location first.",
+                                      style: TextStyle(color: Colors.black),
+                                    ),
                                   ),
-                                ),
-                              )
-                            : Padding(
-                                padding: const EdgeInsets.only(top: 10),
-                                child: Text(
-                                  "No saved locations found. Please add a location first.",
-                                  style: TextStyle(color: Colors.black),
-                                ),
-                              ),
-                    SizedBox(height: 30),
-                    _buildLabel('Upload Image (Optional)'),
-                    GestureDetector(
-                      onTap: () => _showImageSourceDialog(),
-                      child: Container(
-                        height: 150,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          border: Border.all(width: 1),
-                          borderRadius: BorderRadius.circular(10),
+                        SizedBox(height: 30),
+                        _buildLabel('Upload Image (Optional)'),
+                        GestureDetector(
+                          onTap: _showImageSourceDialog,
+                          child: Container(
+                            height: 150,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              border: Border.all(width: 1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: _selectedImage != null
+                                ? Image.file(_selectedImage!, fit: BoxFit.cover)
+                                : Center(child: Icon(Icons.image, size: 40)),
+                          ),
                         ),
-                        child: _selectedImage != null
-                            ? Image.file(_selectedImage!, fit: BoxFit.cover)
-                            : Center(child: Icon(Icons.image, size: 40)),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    onPressed: _submitOrder,
+                    child: Text(
+                      'Confirm',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
-                onPressed: _submitOrder,
-                child: Text(
-                  'Confirm',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+
+        // LOADING OVERLAY
+        if (_isSubmitting)
+          Container(
+            color: Colors.black.withOpacity(0.4),
+            child: Center(
+              child: CircularProgressIndicator(color: Colors.black),
+            ),
+          ),
+      ],
     );
   }
 

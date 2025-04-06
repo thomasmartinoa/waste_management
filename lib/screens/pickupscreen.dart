@@ -13,12 +13,12 @@ class Pickupscreen extends StatefulWidget {
 }
 
 class _PickupscreenState extends State<Pickupscreen> {
-  TextEditingController _dateController = TextEditingController();
-  TextEditingController _timeController = TextEditingController();
-  TextEditingController _wasteTypeController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _timeController = TextEditingController();
+  final TextEditingController _wasteTypeController = TextEditingController();
 
   List<bool> buttonStates = [false, false, false];
-  
+
   String? selectedLocation;
   List<String> savedLocations = [];
   bool isLoadingLocations = true;
@@ -82,15 +82,24 @@ class _PickupscreenState extends State<Pickupscreen> {
   }
 
   Future<void> _savePickupData() async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User not logged in')),
-        );
-        return;
-      }
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User not logged in')),
+      );
+      return;
+    }
 
+    // Show black loading spinner
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: Colors.black),
+      ),
+    );
+
+    try {
       List<String> selectedCategories = _getSelectedCategories();
       String wasteType = _wasteTypeController.text.trim().isEmpty
           ? "nil"
@@ -109,10 +118,13 @@ class _PickupscreenState extends State<Pickupscreen> {
         'timestamp': FieldValue.serverTimestamp(),
       });
 
+      Navigator.pop(context); // Close the loading dialog
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Pickup scheduled')),
       );
     } catch (e) {
+      Navigator.pop(context); // Ensure dialog is closed on error
       print("Error saving pickup data: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to save pickup')),
@@ -204,152 +216,144 @@ class _PickupscreenState extends State<Pickupscreen> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 30),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(left: 27, bottom: 10, top: 50),
-                  child: Text(
-                    "Waste Pick Up",
-                    style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
-                  ),
+          padding: const EdgeInsets.only(bottom: 30),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(left: 27, bottom: 10, top: 50),
+                child: Text(
+                  "Waste Pick Up",
+                  style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
                 ),
-                const Padding(
-                  padding: EdgeInsets.only(left: 30, top: 25),
-                  child: Text(
-                    "Select Category",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
-                  ),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(left: 30, top: 25),
+                child: Text(
+                  "Select Category",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildCategoryButton("Organic", 0),
-                    _buildCategoryButton("InOrganic", 1),
-                    _buildCategoryButton("Hazardous", 2),
-                  ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildCategoryButton("Organic", 0),
+                  _buildCategoryButton("InOrganic", 1),
+                  _buildCategoryButton("Hazardous", 2),
+                ],
+              ),
+              const SizedBox(height: 25),
+              const Padding(
+                padding: EdgeInsets.only(left: 30),
+                child: Text(
+                  'Type of waste for selected \ncategory',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
                 ),
-                const SizedBox(height: 25),
-                const Padding(
-                  padding: EdgeInsets.only(left: 30),
-                  child: Text(
-                    'Type of waste for selected \ncategory',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w400),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(25),
-                  child: TextField(
-                    controller: _wasteTypeController,
-                    minLines: 10,
-                    maxLines: 100,
-                    decoration: InputDecoration(
-                      hintText: "Enter the type of waste (optional)...",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: const BorderSide(color: Colors.black, width: 1.5),
-                      ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(25),
+                child: TextField(
+                  controller: _wasteTypeController,
+                  minLines: 10,
+                  maxLines: 100,
+                  decoration: InputDecoration(
+                    hintText: "Enter the type of waste (optional)...",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: const BorderSide(color: Colors.black, width: 1.5),
                     ),
                   ),
                 ),
-
-                isLoadingLocations
-                    ? const Center(child: CircularProgressIndicator())
-                    : savedLocations.isNotEmpty
-                        ? Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-                            child: DropdownButtonFormField<String>(
-                              value: selectedLocation,
-                              isExpanded: true,
-                              decoration: InputDecoration(
-                                hintText: "Select Location",
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                  borderSide: const BorderSide(color: Colors.black, width: 1.5),
-                                ),
-                                prefixIcon: const Icon(Icons.location_on),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+              ),
+              isLoadingLocations
+                  ? const Center(child: CircularProgressIndicator(color: Colors.black))
+                  : savedLocations.isNotEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+                          child: DropdownButtonFormField<String>(
+                            value: selectedLocation,
+                            isExpanded: true,
+                            decoration: InputDecoration(
+                              hintText: "Select Location",
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: const BorderSide(color: Colors.black, width: 1.5),
                               ),
-                              items: savedLocations.map((location) {
-                                return DropdownMenuItem<String>(
-                                  value: location,
-                                  child: Text(
-                                    location,
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontFamily: 'Poppins',
-                                      color: Colors.black87,
-                                    ),
+                              prefixIcon: const Icon(Icons.location_on),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                            ),
+                            items: savedLocations.map((location) {
+                              return DropdownMenuItem<String>(
+                                value: location,
+                                child: Text(
+                                  location,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontFamily: 'Poppins',
+                                    color: Colors.black87,
                                   ),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedLocation = value;
-                                });
-                              },
-                            ),
-                          )
-                        : const Padding(
-                            padding: EdgeInsets.only(top: 10),
-                            child: Text(
-                              "No saved locations found. Please add a location first.",
-                              style: TextStyle(color: Colors.black),
-                            ),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                selectedLocation = value;
+                              });
+                            },
                           ),
-
-                /// DATE
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-                  child: TextField(
-                    controller: _dateController,
-                    readOnly: true,
-                    onTap: () => _selectDate(context),
-                    decoration: InputDecoration(
-                      hintText: "Select Date",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      prefixIcon: const Icon(Icons.calendar_today),
+                        )
+                      : const Padding(
+                          padding: EdgeInsets.only(top: 10),
+                          child: Text(
+                            "No saved locations found. Please add a location first.",
+                            style: TextStyle(color: Colors.black),
+                          ),
+                        ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+                child: TextField(
+                  controller: _dateController,
+                  readOnly: true,
+                  onTap: () => _selectDate(context),
+                  decoration: InputDecoration(
+                    hintText: "Select Date",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
                     ),
+                    prefixIcon: const Icon(Icons.calendar_today),
                   ),
                 ),
-
-                /// TIME
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25),
-                  child: TextField(
-                    controller: _timeController,
-                    readOnly: true,
-                    onTap: () => _selectTime(context),
-                    decoration: InputDecoration(
-                      hintText: "Select Time",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      prefixIcon: const Icon(Icons.access_time),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 25),
+                child: TextField(
+                  controller: _timeController,
+                  readOnly: true,
+                  onTap: () => _selectTime(context),
+                  decoration: InputDecoration(
+                    hintText: "Select Time",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
                     ),
+                    prefixIcon: const Icon(Icons.access_time),
                   ),
                 ),
-
-                const SizedBox(height: 25),
-                Center(
-                  child: ElevatedButton(
-                    onPressed: _handleNext,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
+              ),
+              const SizedBox(height: 25),
+              Center(
+                child: ElevatedButton(
+                  onPressed: _handleNext,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
                     ),
-                    child: const Text("Next"),
                   ),
+                  child: const Text("Next"),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
